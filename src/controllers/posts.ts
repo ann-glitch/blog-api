@@ -31,7 +31,7 @@ export const getPosts = asyncHandler(async (req: Request, res: Response) => {
 
   //pagination
   const page = parseInt(req.query.page as string, 10) || 1;
-  const limit = parseInt(req.query.limit as string, 10) || 2;
+  const limit = parseInt(req.query.limit as string, 10) || 25;
   const startIndex = (page - 1) * limit;
   const endIndex = page * limit;
   const total = await Post.countDocuments();

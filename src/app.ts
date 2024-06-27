@@ -7,6 +7,21 @@ import connectDB from "./config/db";
 import body from "body-parser";
 import errorHandler from "./middleware/error";
 import cookieParser from "cookie-parser";
+import hpp from "hpp";
+import rateLimit from "express-rate-limit";
+import mongoSanitize from "express-mongo-sanitize";
+
+const app = express();
+const port = process.env.PORT || 3000;
+
+//route files
+import users from "./routes/users";
+import auth from "./routes/auth";
+import posts from "./routes/posts";
+
+// body-parser
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
 //load env vars
 dotenv.config();
@@ -14,20 +29,22 @@ dotenv.config();
 //mongodb connection
 connectDB();
 
-//route files
-import users from "./routes/users";
-import auth from "./routes/auth";
-import posts from "./routes/posts";
+//set mongo sanitize
+app.use(mongoSanitize());
 
-const app = express();
-const port = process.env.PORT || 3000;
+// set security policy
+app.use(helmet());
 
-// body-parser
-app.use(
-  body.json({
-    limit: "500kb",
-  })
-);
+// rate limiting
+const limiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 100,
+});
+
+app.use(limiter);
+
+// prevent http param pollution
+app.use(hpp());
 
 //cookie-parser
 app.use(cookieParser());
@@ -35,12 +52,18 @@ app.use(cookieParser());
 const corsConfig = {
   origin: "",
   credentials: true,
-  methods: ["GET", "POST", "PATCH", "DELETE"],
+  methods: ["GET", "POST", "PUT", "DELETE"],
 };
 app.use(cors(corsConfig));
 app.options("", cors(corsConfig));
-app.use(morgan("dev"));
-app.use(helmet());
+
+//cookie-parser
+app.use(cookieParser());
+
+//dev logging middleware
+if (process.env.NODE_ENV === "development") {
+  app.use(morgan("dev"));
+}
 
 //mount routers
 app.use("/api/v1/users", users);
