@@ -47,6 +47,7 @@ const sendEmail = (options) =>
         user: process.env.SMTP_EMAIL,
         pass: process.env.SMTP_PASSWORD,
       },
+      secure: true,
     });
     // send mail with defined transport object
     const message = {
